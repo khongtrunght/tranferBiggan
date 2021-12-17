@@ -10,6 +10,7 @@ def setup_dataloader(name, h=128, w=128, batch_size=4, num_workers=4):
     let's use store all images on cpu memmory
     because this is for small dataset
     '''
+    name = 'animal'
     data_size = 45
 
     if name == "face":
@@ -21,8 +22,9 @@ def setup_dataloader(name, h=128, w=128, batch_size=4, num_workers=4):
 
         labels_dict = {'cat': 0, 'dog': 1, 'wild': 2}
         for label in labels_dict.keys():
-            img_path_dict[label] = glob.glob(f"data/afhq/train/{label}/*.jpg")
-            img_path_dict[label] = img_path_dict[label][data_size//3]
+            img_path_dict[label] = glob.glob(
+                f"./data/afhq/train/{label}/*.jpg")
+            img_path_dict[label] = img_path_dict[label][:data_size//3]
 
         img_path_list = []
 
