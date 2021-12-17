@@ -170,7 +170,9 @@ def main(args):
         # Iterate over dataset (one epoch).
         for data in dataloader:
             img = data[0].to(device)
-            indices, real_label = data[1].to(device)
+            indices, real_label = data[1]
+            indices = indices.to(device)
+            real_label = real_label.to(device)
 
             scheduler.step()
 
