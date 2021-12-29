@@ -33,9 +33,24 @@ class AdaBIGGAN(nn.Module):
         # torch.nn.init.kaiming_normal_(self.linear.weight)
         # init_weight = generator.shared.weight.mean(dim=0,keepdim=True).transpose(1,0)
 
-        idx = torch.LongTensor([283, 245, 292])
-        init_weight = self.generator.shared.weight.index_select(
-            0, idx)
+        # idx = torch.LongTensor([283, 245, 292])
+        # init_weight = self.generator.shared.weight.index_select(
+        #     0, idx)
+
+        cat = torch.LongTensor([281, 285, 282])
+        dog = torch.LongTensor([227, 248, 273])
+        lion = torch.LongTensor([292, 282, 291])
+
+        cat_embeds = self.generator.shared.weight.index_select(0, cat)
+        dog_embeds = self.generator.shared.weight.index_select(0, dog)
+        lion_embeds = self.generator.shared.weight.index_select(0, lion)
+
+        cat_embeds = cat_embeds.mean(dim=0, keepdim=True)
+        dog_embeds = dog_embeds.mean(dim=0, keepdim=True)
+        lion_embeds = lion_embeds.mean(dim=0, keepdim=True)
+
+        init_weight = torch.cat(
+            [cat_embeds, dog_embeds, lion_embeds], dim=0)
 
         assert self.linear.weight.data.shape == init_weight.shape
         self.linear.weight.data = init_weight
@@ -64,7 +79,7 @@ class AdaBIGGAN(nn.Module):
 
         # z.shape[0] is batch size
         # y = torch.ones((z.shape[0], 1), dtype=torch.float32, device=z.device)
-        # y = self.linear(y)              
+        # y = self.linear(y)
 
         # If hierarchical (i.e. use different z per layer), concatenate zs and ys
         if self.generator.hier:
