@@ -80,16 +80,17 @@ def argparse_setup():
 
 def generate_samples(model, img_prefix, batch_size, writer):
     log_recon = visualizers.reconstruct(
-        model, img_prefix+"reconstruct.jpg", indices=indices_recon, labels=labels_recon, add_small_noise=False)
+        model, "reconstruct.jpg", indices=indices_recon, labels=labels_recon, add_small_noise=False)
     log_inter = visualizers.interpolate(
-        model, img_prefix+"interpolate.jpg", source=0, dist=1, trncate=0.3, num=7)
-    log_random = visualizers.random(model, img_prefix+"random.jpg",
+        model, "interpolate.jpg", source=0, dist=1, trncate=0.3, num=7)
+    log_random = visualizers.random(model, "random.jpg",
                                     tmp=0.2, n=9, truncate=True)
 
     img_log_recon = torchvision.utils.make_grid(
         log_recon[:16], nrow=4, normalize=True)
     img_log_inter = torchvision.utils.make_grid(log_inter, normalize=True)
-    img_log_random = torchvision.utils.make_grid(log_random, normalize=True)
+    img_log_random = torchvision.utils.make_grid(
+        log_random, nrow=3, normalize=True)
     writer.add_image('reconstruct', img_log_recon, img_prefix)
     writer.add_image('interpolate', img_log_inter, img_prefix)
     writer.add_image('sample', img_log_random, img_prefix)

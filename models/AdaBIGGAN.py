@@ -38,8 +38,8 @@ class AdaBIGGAN(nn.Module):
         #     0, idx)
 
         cat = torch.LongTensor([281, 285, 282])
-        dog = torch.LongTensor([227, 248, 273])
-        lion = torch.LongTensor([292, 282, 291])
+        dog = torch.LongTensor([852, 227, 676])
+        lion = torch.LongTensor([277, 278, 280])
 
         cat_embeds = self.generator.shared.weight.index_select(0, cat)
         dog_embeds = self.generator.shared.weight.index_select(0, dog)
