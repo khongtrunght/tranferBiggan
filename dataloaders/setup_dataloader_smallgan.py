@@ -11,7 +11,7 @@ def setup_dataloader(name, h=128, w=128, batch_size=4, num_workers=4):
     because this is for small dataset
     '''
     name = 'animal'
-    data_size = 45
+    data_size = 360
 
     if name == "face":
         img_path_list = glob.glob("./data/face/*.png")
