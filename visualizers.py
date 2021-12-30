@@ -3,7 +3,7 @@ import torchvision
 from scipy.stats import truncnorm
 
 
-def reconstruct(model, out_path, indices, add_small_noise=False):
+def reconstruct(model, out_path, indices, labels, add_small_noise=False):
     with torch.no_grad():
         model.eval()
         device = next(model.parameters()).device
@@ -13,19 +13,19 @@ def reconstruct(model, out_path, indices, add_small_noise=False):
         embeddings = model.embeddings(indices)
         batch_size = embeddings.size()[0]
 
-        labels = [0, ] * batch_size
         labels = torch.tensor(labels, device=device)
         labels_embeddings = model.linear(labels)
 
         if add_small_noise:
             embeddings += torch.randn(embeddings.size(), device=device)*0.01
         image_tensors = model(embeddings, labels_embeddings)
-        torchvision.utils.save_image(
-            image_tensors,
-            out_path,
-            nrow=int(batch_size ** 0.5),
-            normalize=True,
-        )
+        # torchvision.utils.save_image(
+        #     image_tensors,
+        #     out_path,
+        #     nrow=int(batch_size ** 0.5),
+        #     normalize=True,
+        # )
+        return image_tensors
 
 # see https://github.com/nogu-atsu/SmallGAN/blob/2293700dce1e2cd97e25148543532814659516bd/gen_models/ada_generator.py#L37-L53
 
@@ -48,6 +48,7 @@ def interpolate(model, out_path, source, dist, trncate=0.4, num=5):
         labels_embeddings = model.linear(labels)
 
         image_tensors = model(embeddings, labels_embeddings)
+        return image_tensors
         torchvision.utils.save_image(
             image_tensors,
             out_path,
@@ -78,6 +79,7 @@ def random(model, out_path, tmp=0.4, n=9, truncate=False):
         label_embeddings = model.linear(labels)
 
         image_tensors = model(embeddings, label_embeddings)
+        return image_tensors
         torchvision.utils.save_image(
             image_tensors,
             out_path,

@@ -6,6 +6,7 @@ import torch
 import torchvision
 import torch.optim as optim
 from torch.optim import lr_scheduler
+from torch.utils.tensorboard import SummaryWriter
 
 # imports from my own script
 from utils import gpu_setup, savedir_setup, save_args, save_json, check_githash, save_checkpoint
@@ -77,13 +78,21 @@ def argparse_setup():
     return parser.parse_args()
 
 
-def generate_samples(model, img_prefix, batch_size):
-    visualizers.reconstruct(
-        model, img_prefix+"reconstruct.jpg", torch.arange(batch_size), True)
-    visualizers.interpolate(
+def generate_samples(model, img_prefix, batch_size, writer):
+    log_recon = visualizers.reconstruct(
+        model, img_prefix+"reconstruct.jpg", indices=indices_recon, labels=labels_recon, add_small_noise=False)
+    log_inter = visualizers.interpolate(
         model, img_prefix+"interpolate.jpg", source=0, dist=1, trncate=0.3, num=7)
-    visualizers.random(model, img_prefix+"random.jpg",
-                       tmp=0.3, n=9, truncate=True)
+    log_random = visualizers.random(model, img_prefix+"random.jpg",
+                                    tmp=0.2, n=9, truncate=True)
+
+    img_log_recon = torchvision.utils.make_grid(
+        log_recon[:16], nrow=4, normalize=True)
+    img_log_inter = torchvision.utils.make_grid(log_inter, normalize=True)
+    img_log_random = torchvision.utils.make_grid(log_random, normalize=True)
+    writer.add_image('reconstruct', img_log_recon, img_prefix)
+    writer.add_image('interpolate', img_log_inter, img_prefix)
+    writer.add_image('sample', img_log_random, img_prefix)
 
 
 def setup_optimizer(model, lr_g_batch_stat, lr_g_linear, lr_bsa_linear, lr_embed, lr_class_cond_embed, step, step_facter=0.1):
@@ -109,6 +118,9 @@ def setup_optimizer(model, lr_g_batch_stat, lr_g_linear, lr_bsa_linear, lr_embed
 
 
 def main(args):
+
+    writer = SummaryWriter(args.saveroot)
+
     device = gpu_setup(args.gpu)
     append_args = ["dataset", "model"]
     checkpoint_dir = savedir_setup(
@@ -121,6 +133,13 @@ def main(args):
                                   batch_size=args.batch,
                                   num_workers=args.workers,
                                   )
+
+    global indices_recon, labels_recon, imgs_recon
+    data_sample = next(iter(dataloader))
+    imgs_recon = data_sample[0].cuda()
+    indices_recon, labels_recon = data_sample[1]
+    indices_recon = indices_recon.cuda()
+    labels_recon = labels_recon.cuda()
 
     dataset_size = len(dataloader.dataset)
     print("number of images (dataset size): ", dataset_size)
@@ -197,6 +216,7 @@ def main(args):
 
             if iteration % print_freq == 0:
                 temp = "train loss: %0.5f " % loss.item()
+                writer.add_scalar("Loss", loss.item(), global_step=iteration)
                 temp += "| smoothed loss %0.5f " % losses.avg
                 log["log"].append(
                     {"iteration": iteration, "epoch": epoch, "loss": losses.avg})
@@ -204,8 +224,9 @@ def main(args):
                 losses = AverageMeter()
 
             if iteration % eval_freq == 0 and iteration > 0:
-                img_prefix = os.path.join(checkpoint_dir, "%d_" % iteration)
-                generate_samples(model, img_prefix, dataloader.batch_size)
+                img_prefix = iteration
+                generate_samples(model, img_prefix,
+                                 dataloader.batch_size, writer=writer)
 
             if iteration % save_freq == 0 and iteration > 0:
                 save_checkpoint(checkpoint_dir, device,
